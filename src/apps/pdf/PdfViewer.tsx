@@ -3,7 +3,6 @@ import { DOCUMENTS, resolvePublicUrl, type DocumentId } from '../../config/portf
 import { deletePdf, listPdfs, savePdf, type StoredPdf } from '../../utils/pdfStore';
 import { MenuBar, type MenuDef } from '../../components/xp/MenuBar';
 import { PdfIcon } from '../../components/XpIcons';
-import { DOCUMENT_PDF } from '../../assets/documents';
 
 const SELECTED_KEY = (id: DocumentId) => `xp-doc-selected-${id}`;
 const MAX_BYTES = 25 * 1024 * 1024;
@@ -78,7 +77,8 @@ export const PdfViewer: React.FC<{ docId: DocumentId; onClose: () => void }> = (
     fetch(publishedUrl, { method: 'HEAD', cache: 'no-store' })
       .then((res) => {
         const type = res.headers.get('content-type') || '';
-        if (alive) setMissing(!res.ok || type.includes('text/html'));
+        // Only a 404, or an HTML page where a PDF should be, means the file is missing.
+        if (alive) setMissing(res.status === 404 || type.includes('text/html'));
       })
       .catch(() => alive && setMissing(false));
     return () => {
@@ -86,9 +86,7 @@ export const PdfViewer: React.FC<{ docId: DocumentId; onClose: () => void }> = (
     };
   }, [publishedUrl]);
 
-  // If no file is published at the public path, show the built-in placeholder so the viewer always works.
-  const bundledSrc = DOCUMENT_PDF[docId];
-  const src = upload ? blobUrl : missing ? bundledSrc : publishedUrl;
+  const src = upload ? blobUrl : publishedUrl;
   const currentName = upload ? upload.name : doc.fileName;
 
   const handleFile = async (file: File | undefined) => {
@@ -265,7 +263,8 @@ export const PdfViewer: React.FC<{ docId: DocumentId; onClose: () => void }> = (
               </div>
               <div className="mb-1 text-[13px] font-bold text-[#0b3a9a]">{doc.fileName} hasn’t been published yet</div>
               <p className="mb-3 text-[#444]">
-                Add your file at <code className="bg-[#f1f1f1] px-1">{doc.publicPath}</code>, or open a PDF from your
+                The site looked for <code className="bg-[#f1f1f1] px-1 break-all">{publishedUrl}</code> and found nothing. Put
+                the file at <code className="bg-[#f1f1f1] px-1">{doc.publicPath}</code> in the repo, or open a PDF from your
                 computer to preview it here.
               </p>
               <button type="button" className="xp-btn xp-btn-primary" onClick={() => fileRef.current?.click()}>

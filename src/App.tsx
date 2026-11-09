@@ -2,9 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { INITIAL_PROFILE, INITIAL_REPOS, syncGitHubLive, type GitHubProfile, type GitHubRepo } from './data/githubData';
 import { guitarAudio, type GuitarScaleMode, type PluckEvent } from './utils/guitarAudio';
 import { sfx } from './utils/sfx';
+import { playXpSound } from './utils/xpSounds';
 import { clamp, loadJSON, saveJSON } from './utils/storage';
-import { OWNER } from './config/portfolio';
 import { WALLPAPER } from './assets/wallpaper';
+import { OWNER, resolvePublicUrl } from './config/portfolio';
+
+// Full-size wallpaper from public/images/. The small built-in copy sits underneath, so the desktop
+// still shows Bliss while the big file loads, or if the file is missing.
+const WALLPAPER_HD = resolvePublicUrl('images/bliss-xp.jpg');
 import { APPS, DEFAULT_PINS, DESKTOP_ORDER, isAppId, type AppId, type DesktopItemId } from './apps/registry';
 import { XpWindow, type WindowRect, type WindowState } from './components/xp/XpWindow';
 import { Desktop, type DesktopIcon } from './components/xp/Desktop';
@@ -92,6 +97,8 @@ export function App() {
   const [overlay, setOverlay] = useState<Overlay>(() => (hasSession() ? null : 'boot'));
   const [sessionActive, setSessionActive] = useState(hasSession);
   const [powerDialog, setPowerDialog] = useState<null | 'shutdown' | 'logoff'>(null);
+  // True right after startup, so the welcome screen plays the Windows XP startup sound once.
+  const [fromBoot, setFromBoot] = useState(false);
 
   const [profile, setProfile] = useState<GitHubProfile>(INITIAL_PROFILE);
   const [repos, setRepos] = useState<GitHubRepo[]>(INITIAL_REPOS);
@@ -157,20 +164,24 @@ export function App() {
     []
   );
 
-  // Every click or scroll plucks a random classical guitar string — but only once the
-  // user is logged in and on the desktop (never on the boot, logon, standby or
-  // powered-off screens, and not while the power dialog is open).
+  // Guitar plucks only happen on the logged-in desktop, never on the boot, welcome, standby or power-off screens.
+  const pluckActive = sessionActive && overlay === null && !powerDialog;
+  const pluckActiveRef = useRef(pluckActive);
+  pluckActiveRef.current = pluckActive;
+
+  // Every click or scroll plucks a random classical guitar string while the desktop is active.
   useEffect(() => {
-    if (!sessionActive || overlay !== null || powerDialog !== null) return;
     const onDown = (e: PointerEvent) => {
       pointer.current = { x: e.clientX, y: e.clientY };
       scrollIntent.current = Date.now();
       const t = e.target as HTMLElement | null;
       if (!t || t.closest('[data-guitar-note="true"]')) return;
       if (t instanceof HTMLInputElement && t.type === 'range') return;
+      if (!pluckActiveRef.current) return;
       guitarAudio.pluckRandom('click');
     };
     const onWheel = (e: WheelEvent) => {
+      if (!pluckActiveRef.current) return;
       pointer.current = { x: e.clientX, y: e.clientY };
       scrollIntent.current = Date.now();
       guitarAudio.pluckRandom('scroll');
@@ -179,6 +190,7 @@ export function App() {
       scrollIntent.current = Date.now();
     };
     const onScroll = () => {
+      if (!pluckActiveRef.current) return;
       if (Date.now() - scrollIntent.current < 900) guitarAudio.pluckRandom('scroll');
     };
     const onMove = (e: PointerEvent) => {
@@ -198,7 +210,7 @@ export function App() {
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('pointermove', onMove);
     };
-  }, [sessionActive, overlay, powerDialog]);
+  }, []);
 
   const handleSync = useCallback(async () => {
     setSyncing(true);
@@ -576,7 +588,7 @@ export function App() {
       {sessionActive && (
         <div
           className={`absolute inset-0 overflow-hidden bg-cover bg-center ${powerDialog ? 'xp-grayscale' : ''}`}
-          style={{ backgroundImage: `url('${WALLPAPER}')`, backgroundColor: '#3a6ea5' }}
+          style={{ backgroundImage: `url('${WALLPAPER_HD}'), url('${WALLPAPER}')`, backgroundColor: '#3a6ea5' }}
           onContextMenu={(e) => {
             if ((e.target as HTMLElement).closest('.xp-window, .xp-taskbar, .xp-startmenu, .xp-menu, .xp-balloon')) return;
             e.preventDefault();
@@ -707,7 +719,7 @@ export function App() {
           }}
           onLogOff={() => {
             setPowerDialog(null);
-            sfx.logoff();
+            playXpSound('logoff');
             endSession();
             setOverlay('login');
           }}
@@ -718,11 +730,20 @@ export function App() {
         />
       )}
 
-      {overlay === 'boot' && <BootScreen onDone={() => setOverlay('login')} />}
+      {overlay === 'boot' && (
+        <BootScreen
+          onDone={() => {
+            setFromBoot(true);
+            setOverlay('login');
+          }}
+        />
+      )}
       {overlay === 'login' && (
         <LoginScreen
           avatar={profile.avatar_url}
+          fromBoot={fromBoot}
           onLogin={() => {
+            setFromBoot(false);
             setSessionActive(true);
             setOverlay(null);
           }}

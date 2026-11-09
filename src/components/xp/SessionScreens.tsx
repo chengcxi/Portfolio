@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { PowerIcon, WindowsFlagIcon } from '../XpIcons';
-import { sfx } from '../../utils/sfx';
+import { playXpSound } from '../../utils/xpSounds';
 import { WALLPAPER } from '../../assets/wallpaper';
 
 export const XpLogo: React.FC = () => (
@@ -50,16 +50,22 @@ export const BootScreen: React.FC<{ onDone: () => void }> = ({ onDone }) => {
   );
 };
 
-export const LoginScreen: React.FC<{ avatar: string; onLogin: () => void; onTurnOff: () => void }> = ({
+/** `fromBoot` is true only on the first welcome screen after startup, so the Windows XP startup sound plays then (not after a log off). */
+export const LoginScreen: React.FC<{ avatar: string; onLogin: () => void; onTurnOff: () => void; fromBoot?: boolean }> = ({
   avatar,
   onLogin,
   onTurnOff,
+  fromBoot = false,
 }) => {
   const [welcome, setWelcome] = useState(false);
+
+  useEffect(() => {
+    if (fromBoot) playXpSound('startup');
+  }, [fromBoot]);
+
   const login = () => {
     if (welcome) return;
     setWelcome(true);
-    sfx.startup();
     window.setTimeout(onLogin, 1500);
   };
 
