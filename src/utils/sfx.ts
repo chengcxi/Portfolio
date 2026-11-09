@@ -1,7 +1,29 @@
 import { guitarAudio } from './guitarAudio';
+import { XP_LOGOFF_SOUND, XP_STARTUP_SOUND } from '../assets/sounds';
 
-/** Tiny synthesized Windows XP / AIM style system sounds (no audio files needed). */
+/** Windows XP / AIM style system sounds: real XP startup & logoff audio, everything else synthesized. */
 let ctx: AudioContext | null = null;
+
+const liveAudios = new Set<HTMLAudioElement>();
+
+/** Plays an encoded audio file at the master volume. Returns false if playback is unavailable. */
+function playFile(uri: string): boolean {
+  if (typeof Audio === 'undefined') return false;
+  try {
+    const audio = new Audio();
+    audio.src = uri;
+    audio.volume = Math.max(0, Math.min(1, guitarAudio.volume));
+    liveAudios.add(audio);
+    const done = () => liveAudios.delete(audio);
+    audio.addEventListener('ended', done, { once: true });
+    audio.addEventListener('error', done, { once: true });
+    const result = audio.play();
+    if (result && typeof result.catch === 'function') result.catch(done);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function getCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -75,6 +97,8 @@ function noise(duration: number, amount: number, freq = 1800) {
 
 export const sfx = {
   startup() {
+    // Real Windows XP startup sound (winhistory.de); synthesized jingle as fallback.
+    if (playFile(XP_STARTUP_SOUND)) return;
     play([
       { f: 311.13, t: 0, d: 1.6, type: 'triangle', g: 0.14 },
       { f: 466.16, t: 0.16, d: 1.5, type: 'triangle', g: 0.13 },
@@ -84,6 +108,8 @@ export const sfx = {
     ]);
   },
   logoff() {
+    // Real Windows XP logoff sound (winhistory.de); synthesized jingle as fallback.
+    if (playFile(XP_LOGOFF_SOUND)) return;
     play([
       { f: 932.33, t: 0, d: 0.7, type: 'sine', g: 0.1 },
       { f: 622.25, t: 0.18, d: 0.8, type: 'triangle', g: 0.12 },

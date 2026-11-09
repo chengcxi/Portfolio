@@ -57,14 +57,14 @@ export const DOCUMENTS: Record<DocumentId, PortfolioDocument> = {
   resume: {
     id: 'resume',
     fileName: 'Cheng_Resume.pdf',
-    title: 'Resume',
+    title: 'Cheng_Resume',
     publicPath: 'public/files/Cheng_Resume.pdf',
     versions: [{ id: 'published', label: 'Cheng_Resume.pdf (published)', url: 'files/Cheng_Resume.pdf' }],
   },
   research: {
     id: 'research',
     fileName: 'arxiv_l4s.pdf',
-    title: 'Research',
+    title: 'L4S_arXiv',
     publicPath: 'public/files/arxiv_l4s.pdf',
     versions: [{ id: 'published', label: 'arxiv_l4s.pdf (published)', url: 'files/arxiv_l4s.pdf' }],
   },

@@ -93,7 +93,7 @@ export const APPS: Record<AppId, AppDef> = {
   },
   research: {
     id: 'research',
-    title: 'research.pdf - Adobe Reader',
+    title: 'arxiv_l4s.pdf - Adobe Reader',
     label: 'research.pdf',
     description: 'Research overview',
     icon: (s) => <PdfIcon size={s} />,
