@@ -56,17 +56,17 @@ export interface PortfolioDocument {
 export const DOCUMENTS: Record<DocumentId, PortfolioDocument> = {
   resume: {
     id: 'resume',
-    fileName: 'Resume.pdf',
-    title: 'Resume',
-    publicPath: 'public/files/Resume.pdf',
-    versions: [{ id: 'published', label: 'Resume.pdf (published)', url: 'files/Resume.pdf' }],
+    fileName: 'Cheng_Resume.pdf',
+    title: 'Cheng_Resume',
+    publicPath: 'public/files/Cheng_Resume.pdf',
+    versions: [{ id: 'published', label: 'Cheng_Resume.pdf (published)', url: 'files/Cheng_Resume.pdf' }],
   },
   research: {
     id: 'research',
-    fileName: 'research.pdf',
-    title: 'Research',
-    publicPath: 'public/files/research.pdf',
-    versions: [{ id: 'published', label: 'research.pdf (published)', url: 'files/research.pdf' }],
+    fileName: 'arxiv_l4s.pdf',
+    title: 'L4S_arXiv',
+    publicPath: 'public/files/arxiv_l4s.pdf',
+    versions: [{ id: 'published', label: 'arxiv_l4s.pdf (published)', url: 'files/arxiv_l4s.pdf' }],
   },
 };
 
